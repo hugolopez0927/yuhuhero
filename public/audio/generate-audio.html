@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Audio para YuhuHero</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #8B5CF6;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .sound-group {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        button {
+            background-color: #8B5CF6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #7C4DEE;
+        }
+        .download-btn {
+            background-color: #10B981;
+        }
+        .download-btn:hover {
+            background-color: #059669;
+        }
+        .play-btn {
+            background-color: #3B82F6;
+        }
+        .play-btn:hover {
+            background-color: #2563EB;
+        }
+        h2 {
+            margin-top: 0;
+            color: #5B21B6;
+        }
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .complete-download {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .complete-download button {
+            font-size: 18px;
+            padding: 12px 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generador de Audio para YuhuHero</h1>
+    
+    <div class="container">
+        <div class="instructions">
+            <p>Esta herramienta te permite generar efectos de sonido para tu quiz. Haz clic en "Reproducir" para escuchar el sonido, y luego "Descargar" para guardarlo con el nombre correcto. Después, coloca todos los archivos descargados en la carpeta <code>/public/audio/</code> de tu proyecto.</p>
+        </div>
+        
+        <div class="sound-group">
+            <h2>1. Sonido de Clic</h2>
+            <p>Sonido corto para navegación y cambios de pregunta</p>
+            <button class="play-btn" onclick="playClick()">Reproducir</button>
+            <button class="download-btn" onclick="downloadClick()">Descargar click.mp3</button>
+        </div>
+        
+        <div class="sound-group">
+            <h2>2. Sonidos para Opciones</h2>
+            <p>Sonidos distintos para cada opción seleccionada</p>
+            
+            <div>
+                <button class="play-btn" onclick="playOption(1)">Reproducir Opción 1</button>
+                <button class="download-btn" onclick="downloadOption(1)">Descargar option1.mp3</button>
+            </div>
+            <div>
+                <button class="play-btn" onclick="playOption(2)">Reproducir Opción 2</button>
+                <button class="download-btn" onclick="downloadOption(2)">Descargar option2.mp3</button>
+            </div>
+            <div>
+                <button class="play-btn" onclick="playOption(3)">Reproducir Opción 3</button>
+                <button class="download-btn" onclick="downloadOption(3)">Descargar option3.mp3</button>
+            </div>
+            <div>
+                <button class="play-btn" onclick="playOption(4)">Reproducir Opción 4</button>
+                <button class="download-btn" onclick="downloadOption(4)">Descargar option4.mp3</button>
+            </div>
+        </div>
+        
+        <div class="sound-group">
+            <h2>3. Cuenta Regresiva</h2>
+            <p>Sonido de cuenta regresiva al iniciar el quiz</p>
+            <button class="play-btn" onclick="playCountdown()">Reproducir</button>
+            <button class="download-btn" onclick="downloadCountdown()">Descargar countdown.mp3</button>
+        </div>
+        
+        <div class="sound-group">
+            <h2>4. Finalización</h2>
+            <p>Sonido de celebración al completar el quiz</p>
+            <button class="play-btn" onclick="playComplete()">Reproducir</button>
+            <button class="download-btn" onclick="downloadComplete()">Descargar quiz-complete.mp3</button>
+        </div>
+        
+        <div class="sound-group">
+            <h2>5. Música de Fondo</h2>
+            <p>Música energética para el fondo del quiz (5 segundos de muestra)</p>
+            <button class="play-btn" onclick="playBackground()">Reproducir</button>
+            <button class="download-btn" onclick="downloadBackground()">Descargar background-music.mp3</button>
+        </div>
+        
+        <div class="complete-download">
+            <button class="download-btn" onclick="downloadAll()">Descargar Todos los Sonidos</button>
+        </div>
+    </div>
+
+    <script>
+        // Contexto de audio principal
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Función para generar un tono
+        function createTone(frequency, duration, type = 'sine', startTime = 0) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = type;
+            oscillator.frequency.value = frequency;
+            gainNode.gain.value = 0.3;
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Programar inicio y fin
+            oscillator.start(audioContext.currentTime + startTime);
+            
+            // Fade out suave
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + startTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + duration);
+            
+            oscillator.stop(audioContext.currentTime + startTime + duration);
+            
+            return { oscillator, gainNode };
+        }
+        
+        // Función para crear un blob de audio a partir de un tono
+        function createAudioBlob(renderCallback, duration = 1) {
+            return new Promise(resolve => {
+                const offlineContext = new OfflineAudioContext(2, audioContext.sampleRate * duration, audioContext.sampleRate);
+                
+                renderCallback(offlineContext);
+                
+                offlineContext.startRendering().then(renderedBuffer => {
+                    const wavEncoder = new WavAudioEncoder(offlineContext.sampleRate, offlineContext.numberOfChannels);
+                    
+                    for (let channel = 0; channel < renderedBuffer.numberOfChannels; channel++) {
+                        const channelData = renderedBuffer.getChannelData(channel);
+                        wavEncoder.encode([channelData]);
+                    }
+                    
+                    const blob = wavEncoder.finish();
+                    resolve(blob);
+                });
+            });
+        }
+        
+        // Función para descargar un archivo de audio
+        function downloadAudio(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Reproducir y descargar sonido de clic
+        function playClick() {
+            createTone(880, 0.1, 'sine');
+        }
+        
+        async function downloadClick() {
+            const blob = await createAudioBlob(ctx => {
+                const tone = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                tone.type = 'sine';
+                tone.frequency.value = 880;
+                gain.gain.value = 0.3;
+                
+                tone.connect(gain);
+                gain.connect(ctx.destination);
+                
+                tone.start();
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+                tone.stop(0.1);
+            }, 0.2);
+            
+            downloadAudio(blob, 'click.mp3');
+        }
+        
+        // Reproducir y descargar sonidos de opciones
+        function playOption(num) {
+            const types = ['sine', 'square', 'triangle', 'sawtooth'];
+            const frequencies = [523, 587, 659, 698];
+            
+            createTone(frequencies[num-1], 0.3, types[(num-1) % types.length]);
+        }
+        
+        async function downloadOption(num) {
+            const types = ['sine', 'square', 'triangle', 'sawtooth'];
+            const frequencies = [523, 587, 659, 698];
+            
+            const blob = await createAudioBlob(ctx => {
+                const tone = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                tone.type = types[(num-1) % types.length];
+                tone.frequency.value = frequencies[num-1];
+                gain.gain.value = 0.3;
+                
+                tone.connect(gain);
+                gain.connect(ctx.destination);
+                
+                tone.start();
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                tone.stop(0.3);
+            }, 0.4);
+            
+            downloadAudio(blob, `option${num}.mp3`);
+        }
+        
+        // Reproducir y descargar sonido de cuenta regresiva
+        function playCountdown() {
+            createTone(440, 0.1, 'sine', 0);
+            createTone(440, 0.1, 'sine', 0.3);
+            createTone(440, 0.1, 'sine', 0.6);
+            createTone(880, 0.3, 'sine', 1);
+        }
+        
+        async function downloadCountdown() {
+            const blob = await createAudioBlob(ctx => {
+                // Primer beep
+                const tone1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                tone1.type = 'sine';
+                tone1.frequency.value = 440;
+                gain1.gain.value = 0.3;
+                tone1.connect(gain1);
+                gain1.connect(ctx.destination);
+                tone1.start(0);
+                gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+                tone1.stop(0.1);
+                
+                // Segundo beep
+                const tone2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                tone2.type = 'sine';
+                tone2.frequency.value = 440;
+                gain2.gain.value = 0.3;
+                tone2.connect(gain2);
+                gain2.connect(ctx.destination);
+                tone2.start(0.3);
+                gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                tone2.stop(0.4);
+                
+                // Tercer beep
+                const tone3 = ctx.createOscillator();
+                const gain3 = ctx.createGain();
+                tone3.type = 'sine';
+                tone3.frequency.value = 440;
+                gain3.gain.value = 0.3;
+                tone3.connect(gain3);
+                gain3.connect(ctx.destination);
+                tone3.start(0.6);
+                gain3.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+                tone3.stop(0.7);
+                
+                // Beep final
+                const tone4 = ctx.createOscillator();
+                const gain4 = ctx.createGain();
+                tone4.type = 'sine';
+                tone4.frequency.value = 880;
+                gain4.gain.value = 0.3;
+                tone4.connect(gain4);
+                gain4.connect(ctx.destination);
+                tone4.start(1);
+                gain4.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.3);
+                tone4.stop(1.3);
+            }, 1.5);
+            
+            downloadAudio(blob, 'countdown.mp3');
+        }
+        
+        // Reproducir y descargar sonido de finalización
+        function playComplete() {
+            createTone(523, 0.2, 'sine', 0);
+            createTone(659, 0.2, 'sine', 0.2);
+            createTone(784, 0.3, 'sine', 0.4);
+            createTone(1047, 0.5, 'sine', 0.7);
+        }
+        
+        async function downloadComplete() {
+            const blob = await createAudioBlob(ctx => {
+                // Secuencia de notas ascendentes
+                const tones = [
+                    { freq: 523, start: 0, duration: 0.2 },
+                    { freq: 659, start: 0.2, duration: 0.2 },
+                    { freq: 784, start: 0.4, duration: 0.3 },
+                    { freq: 1047, start: 0.7, duration: 0.5 }
+                ];
+                
+                tones.forEach(t => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.value = t.freq;
+                    gain.gain.value = 0.3;
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.start(t.start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t.start + t.duration);
+                    osc.stop(t.start + t.duration);
+                });
+            }, 1.3);
+            
+            downloadAudio(blob, 'quiz-complete.mp3');
+        }
+        
+        // Reproducir y descargar música de fondo
+        function playBackground() {
+            // Una secuencia simple de notas para demostración
+            const notes = [
+                { freq: 392, duration: 0.2, delay: 0, type: 'square' },
+                { freq: 440, duration: 0.2, delay: 0.2, type: 'square' },
+                { freq: 494, duration: 0.4, delay: 0.4, type: 'square' },
+                { freq: 392, duration: 0.2, delay: 0.8, type: 'square' },
+                { freq: 440, duration: 0.2, delay: 1.0, type: 'square' },
+                { freq: 523, duration: 0.4, delay: 1.2, type: 'square' },
+                { freq: 494, duration: 0.6, delay: 1.6, type: 'square' },
+            ];
+            
+            notes.forEach(note => {
+                createTone(note.freq, note.duration, note.type, note.delay);
+            });
+        }
+        
+        async function downloadBackground() {
+            const blob = await createAudioBlob(ctx => {
+                // Una secuencia simple de notas para demostración
+                const notes = [
+                    { freq: 392, duration: 0.2, delay: 0, type: 'square' },
+                    { freq: 440, duration: 0.2, delay: 0.2, type: 'square' },
+                    { freq: 494, duration: 0.4, delay: 0.4, type: 'square' },
+                    { freq: 392, duration: 0.2, delay: 0.8, type: 'square' },
+                    { freq: 440, duration: 0.2, delay: 1.0, type: 'square' },
+                    { freq: 523, duration: 0.4, delay: 1.2, type: 'square' },
+                    { freq: 494, duration: 0.6, delay: 1.6, type: 'square' },
+                    
+                    // Repetir para tener más duración
+                    { freq: 392, duration: 0.2, delay: 2.2, type: 'square' },
+                    { freq: 440, duration: 0.2, delay: 2.4, type: 'square' },
+                    { freq: 494, duration: 0.4, delay: 2.6, type: 'square' },
+                    { freq: 392, duration: 0.2, delay: 3.0, type: 'square' },
+                    { freq: 440, duration: 0.2, delay: 3.2, type: 'square' },
+                    { freq: 523, duration: 0.4, delay: 3.4, type: 'square' },
+                    { freq: 494, duration: 0.8, delay: 3.8, type: 'square' },
+                ];
+                
+                notes.forEach(note => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = note.type;
+                    osc.frequency.value = note.freq;
+                    gain.gain.value = 0.2; // Un poco más bajo para la música de fondo
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.start(note.delay);
+                    gain.gain.exponentialRampToValueAtTime(0.001, note.delay + note.duration);
+                    osc.stop(note.delay + note.duration);
+                });
+            }, 5.0); // 5 segundos de muestra
+            
+            downloadAudio(blob, 'background-music.mp3');
+        }
+        
+        // Descargar todos los sonidos
+        async function downloadAll() {
+            await downloadClick();
+            await downloadOption(1);
+            await downloadOption(2);
+            await downloadOption(3);
+            await downloadOption(4);
+            await downloadCountdown();
+            await downloadComplete();
+            await downloadBackground();
+            
+            alert('¡Todos los sonidos han sido descargados! Ahora colócalos en la carpeta /public/audio/ de tu proyecto.');
+        }
+        
+        // Implementación simplificada de WavAudioEncoder
+        class WavAudioEncoder {
+            constructor(sampleRate, numChannels) {
+                this.sampleRate = sampleRate;
+                this.numChannels = numChannels;
+                this.numSamples = 0;
+                this.dataViews = [];
+            }
+
+            encode(channelData) {
+                const len = channelData[0].length;
+                this.numSamples += len;
+                
+                const buffer = new ArrayBuffer(len * this.numChannels * 2);
+                const view = new DataView(buffer);
+                
+                let offset = 0;
+                for (let i = 0; i < len; i++) {
+                    for (let channel = 0; channel < this.numChannels; channel++) {
+                        const x = channelData[channel][i] * 0x7FFF;
+                        view.setInt16(offset, x < 0 ? Math.max(x, -0x8000) : Math.min(x, 0x7FFF), true);
+                        offset += 2;
+                    }
+                }
+                
+                this.dataViews.push(view);
+                return this;
+            }
+
+            finish() {
+                const dataLength = this.numChannels * this.numSamples * 2;
+                const buffer = new ArrayBuffer(44 + dataLength);
+                const view = new DataView(buffer);
+                
+                // Escribir cabecera WAV
+                let offset = 0;
+                
+                // "RIFF" signature
+                setString(view, offset, "RIFF"); offset += 4;
+                // File length
+                view.setUint32(offset, 36 + dataLength, true); offset += 4;
+                // "WAVE" signature
+                setString(view, offset, "WAVE"); offset += 4;
+                
+                // Format chunk
+                setString(view, offset, "fmt "); offset += 4;
+                // Format chunk length
+                view.setUint32(offset, 16, true); offset += 4;
+                // Sample format (raw)
+                view.setUint16(offset, 1, true); offset += 2;
+                // Channels
+                view.setUint16(offset, this.numChannels, true); offset += 2;
+                // Sample rate
+                view.setUint32(offset, this.sampleRate, true); offset += 4;
+                // Byte rate
+                view.setUint32(offset, this.sampleRate * this.numChannels * 2, true); offset += 4;
+                // Block align
+                view.setUint16(offset, this.numChannels * 2, true); offset += 2;
+                // Bits per sample
+                view.setUint16(offset, 16, true); offset += 2;
+                
+                // Data chunk
+                setString(view, offset, "data"); offset += 4;
+                // Data length
+                view.setUint32(offset, dataLength, true); offset += 4;
+                
+                // Copiar datos de audio
+                const dataView = new Uint8Array(buffer, offset);
+                let pos = 0;
+                for (let i = 0; i < this.dataViews.length; i++) {
+                    const dv = new Uint8Array(this.dataViews[i].buffer);
+                    dataView.set(dv, pos);
+                    pos += dv.length;
+                }
+                
+                return new Blob([buffer], { type: "audio/wav" });
+            }
+        }
+
+        function setString(view, offset, str) {
+            for (let i = 0; i < str.length; i++) {
+                view.setUint8(offset + i, str.charCodeAt(i));
+            }
+        }
+    </script>
+</body>
+</html> 
