@@ -1,0 +1,272 @@
+import axios from 'axios';
+import { toast } from 'react-toastify';
+
+// URL base del API
+const API_URL = 'http://localhost:5001/api';
+
+// Cliente Axios configurado
+const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  // No necesitamos cookies ya que usamos JWT en Authorization header
+  withCredentials: false,
+});
+
+// Interceptor para añadir el token a las peticiones
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Interceptor para manejar errores de respuesta
+apiClient.interceptors.response.use(
+  response => response,
+  error => {
+    // Manejar errores de autenticación
+    if (error.response && error.response.status === 401) {
+      // Si no estamos en la página de login, redireccionar
+      if (window.location.pathname !== '/login') {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        toast.error('Sesión expirada. Por favor inicia sesión nuevamente.');
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// URLs de prueba para backend
+const TEST_URLS = [
+  'http://localhost:5001/api',
+  'http://localhost:3001/api',
+  'http://localhost:5173/api'
+];
+
+// Verificar conexión con el backend
+export const testBackendConnection = async (): Promise<string> => {
+  for (const url of TEST_URLS) {
+    try {
+      const response = await fetch(`${url}/auth/login`, {
+        method: 'HEAD',
+      });
+      if (response.status !== 404) {
+        return url;
+      }
+    } catch (error) {
+      console.log(`Error conectando a ${url}:`, error);
+    }
+  }
+  throw new Error('No se pudo conectar con el backend');
+};
+
+// Tipos de datos
+export interface User {
+  id: string;
+  name: string;
+  phone: string;
+  token?: string;
+  quizCompleted: boolean;
+}
+
+export interface LoginCredentials {
+  phone: string;
+  password: string;
+}
+
+export interface RegisterData {
+  name: string;
+  phone: string;
+  password: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: {
+    id: string;
+    text: string;
+  }[];
+  correct_option_id?: string;
+  explanation?: string;
+}
+
+export interface QuizSubmission {
+  quiz_id: string;
+  answers: {
+    question_id: string;
+    selected_option_id: string;
+  }[];
+}
+
+export interface QuizResult {
+  correct_answers: number;
+  total_questions: number;
+  score: number;
+  passed: boolean;
+  rewards: number;
+}
+
+export interface GameProgress {
+  current_level: number;
+  coins: number;
+  completed_levels: string[];
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  created_at: string;
+}
+
+// Funciones de API
+export const loginUser = async (credentials: LoginCredentials): Promise<User> => {
+  try {
+    // Crear URLSearchParams para el formato que espera OAuth2
+    const formData = new URLSearchParams();
+    formData.append('username', credentials.phone); // FastAPI espera 'username'
+    formData.append('password', credentials.password);
+
+    const response = await apiClient.post('/auth/login', formData.toString(), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+    
+    localStorage.setItem('token', response.data.access_token);
+    return getUserProfile();
+  } catch (error) {
+    console.error('Error en login:', error);
+    throw error;
+  }
+};
+
+export const registerUser = async (data: RegisterData): Promise<User> => {
+  try {
+    const response = await apiClient.post('/auth/register', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error en registro:', error);
+    throw error;
+  }
+};
+
+export const getUserProfile = async (): Promise<User> => {
+  try {
+    const response = await apiClient.get('/users/me');
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo perfil:', error);
+    throw error;
+  }
+};
+
+export const updateQuizStatus = async (quizResponses: { 
+  questionId: string;
+  questionText: string;
+  selectedOptionId: string;
+  selectedOptionText: string;
+}[]) => {
+  try {
+    const response = await fetch(`${API_URL}/users/update-quiz-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({
+        quizCompleted: true,
+        quizResponses
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al actualizar el estado del quiz');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error en updateQuizStatus:', error);
+    throw error;
+  }
+};
+
+export const getFinancialQuiz = async (): Promise<{ id: string, title: string, description: string, questions: QuizQuestion[] }> => {
+  try {
+    const response = await apiClient.get('/quiz/financial');
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo quiz:', error);
+    throw error;
+  }
+};
+
+export const submitQuiz = async (submission: QuizSubmission): Promise<QuizResult> => {
+  try {
+    const response = await apiClient.post('/quiz/submit', submission);
+    return response.data;
+  } catch (error) {
+    console.error('Error enviando respuestas del quiz:', error);
+    throw error;
+  }
+};
+
+export const getGameProgress = async (): Promise<GameProgress> => {
+  try {
+    const response = await apiClient.get('/game/progress');
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo progreso del juego:', error);
+    throw error;
+  }
+};
+
+export const updateGameProgress = async (data: Partial<GameProgress>): Promise<GameProgress> => {
+  try {
+    const response = await apiClient.put('/game/progress', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error actualizando progreso del juego:', error);
+    throw error;
+  }
+};
+
+export const getGameMap = async (): Promise<any> => {
+  try {
+    const response = await apiClient.get('/game/map');
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo mapa del juego:', error);
+    throw error;
+  }
+};
+
+export const getNotifications = async (): Promise<Notification[]> => {
+  try {
+    const response = await apiClient.get('/notifications');
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo notificaciones:', error);
+    throw error;
+  }
+};
+
+export const markNotificationAsRead = async (notificationId: string): Promise<void> => {
+  try {
+    await apiClient.put(`/notifications/${notificationId}`, { read: true });
+  } catch (error) {
+    console.error('Error marcando notificación como leída:', error);
+    throw error;
+  }
+}; 
