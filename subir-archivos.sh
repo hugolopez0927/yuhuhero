@@ -8,9 +8,7 @@ SERVER_IP="198.211.97.86"
 SERVER_USER="root"
 SSH_KEY="C:\Users\HugoLopez\.ssh\id_rsa"  # Ruta de tu clave SSH
 
-echo "🚀 Subiendo archivos de configuración a game.yuhu.mx..."
-echo "📡 Servidor: $SERVER_USER@$SERVER_IP"
-echo "🔐 Usando clave SSH: $SSH_KEY"
+echo "🚀 Subiendo archivos de configuración a game.yuhu.mx"
 
 # Verificar que los archivos existen
 echo "🔍 Verificando archivos locales..."
@@ -58,19 +56,13 @@ echo "📁 Creando directorios en el servidor..."
 ssh -i "$SSH_KEY" "$SERVER_USER@$SERVER_IP" "mkdir -p /tmp/yuhuhero-config/nginx-config"
 
 # Subir archivos
-echo "📤 Subiendo archivos..."
-
-echo "  → setup-server.sh"
-scp -i "$SSH_KEY" "setup-server.sh" "$SERVER_USER@$SERVER_IP:/tmp/yuhuhero-config/"
-
-echo "  → deploy-app.sh" 
-scp -i "$SSH_KEY" "deploy-app.sh" "$SERVER_USER@$SERVER_IP:/tmp/yuhuhero-config/"
+echo "📤 Subiendo archivos de configuración..."
+scp -i "$SSH_KEY" nginx-config/game.yuhu.mx.conf "$SERVER_USER@$SERVER_IP:/etc/nginx/sites-available/"
+scp -i "$SSH_KEY" setup-server.sh "$SERVER_USER@$SERVER_IP:/root/"
+scp -i "$SSH_KEY" deploy-app.sh "$SERVER_USER@$SERVER_IP:/root/"
 
 echo "  → verificar-dns.sh"
 scp -i "$SSH_KEY" "verificar-dns.sh" "$SERVER_USER@$SERVER_IP:/tmp/yuhuhero-config/"
-
-echo "  → nginx-config/game.yuhu.mx.conf"
-scp -i "$SSH_KEY" "nginx-config/game.yuhu.mx.conf" "$SERVER_USER@$SERVER_IP:/tmp/yuhuhero-config/nginx-config/"
 
 echo "  → Archivos de documentación"
 scp -i "$SSH_KEY" "DNS-CONFIG.md" "INSTALACION-COMPLETA.md" "$SERVER_USER@$SERVER_IP:/tmp/yuhuhero-config/"
@@ -79,7 +71,39 @@ scp -i "$SSH_KEY" "DNS-CONFIG.md" "INSTALACION-COMPLETA.md" "$SERVER_USER@$SERVE
 echo "🔧 Configurando permisos..."
 ssh -i "$SSH_KEY" "$SERVER_USER@$SERVER_IP" "chmod +x /tmp/yuhuhero-config/*.sh"
 
-echo "✅ ¡Archivos subidos correctamente!"
+echo "✅ Archivos subidos correctamente"
+
+echo "🔄 Ejecutando deployment..."
+ssh -i "$SSH_KEY" "$SERVER_USER@$SERVER_IP" "
+    echo '🚀 Iniciando deployment desde rama main...'
+    cd /var/www
+    
+    # Eliminar clon anterior
+    rm -rf yuhuhero
+    
+    # Clonar desde rama main
+    git clone -b main https://github.com/hugolopez0927/yuhuhero.git
+    cd yuhuhero
+    
+    echo '📋 Verificando estructura del proyecto:'
+    ls -la
+    
+    echo '📂 Verificando carpetas importantes:'
+    echo '=== backend ==='
+    ls -la backend/ 2>/dev/null || echo 'No hay carpeta backend directa'
+    
+    echo '=== yuhuhero ==='
+    ls -la yuhuhero/ 2>/dev/null || echo 'No hay carpeta yuhuhero directa'
+    
+    echo '=== game_front ==='
+    ls -la yuhuhero/game_front/ 2>/dev/null || echo 'No hay game_front en yuhuhero/'
+    
+    echo '=== game_back ==='
+    ls -la yuhuhero/game_back/ 2>/dev/null || echo 'No hay game_back en yuhuhero/'
+"
+
+echo "✅ Verificación completada. Revisa la salida para confirmar que todas las carpetas están presentes."
+
 echo ""
 echo "📋 Próximos pasos en el SERVIDOR:"
 echo "1. Conectarte por SSH:"
