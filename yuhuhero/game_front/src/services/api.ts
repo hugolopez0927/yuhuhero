@@ -133,19 +133,14 @@ export interface Notification {
 // Funciones de API
 export const loginUser = async (credentials: LoginCredentials): Promise<User> => {
   try {
-    // Crear URLSearchParams para el formato que espera OAuth2
-    const formData = new URLSearchParams();
-    formData.append('username', credentials.phone); // FastAPI espera 'username'
-    formData.append('password', credentials.password);
-
-    const response = await apiClient.post('/auth/login', formData.toString(), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+    // Usar JSON en lugar de FormData para el backend Node.js
+    const response = await apiClient.post('/auth/login', {
+      phone: credentials.phone,
+      password: credentials.password
     });
     
-    localStorage.setItem('token', response.data.access_token);
-    return getUserProfile();
+    localStorage.setItem('token', response.data.token);
+    return response.data;
   } catch (error) {
     console.error('Error en login:', error);
     throw error;
@@ -164,7 +159,7 @@ export const registerUser = async (data: RegisterData): Promise<User> => {
 
 export const getUserProfile = async (): Promise<User> => {
   try {
-    const response = await apiClient.get('/users/me');
+    const response = await apiClient.get('/users/profile');
     return response.data;
   } catch (error) {
     console.error('Error obteniendo perfil:', error);
@@ -179,14 +174,14 @@ export const updateQuizStatus = async (quizResponses: {
   selectedOptionText: string;
 }[]) => {
   try {
-    const response = await fetch(`${API_URL}/users/update-quiz-status`, {
+    const response = await fetch(`${API_URL}/users/quiz-status`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify({
-        quizCompleted: true,
+        completed: true,
         quizResponses
       }),
     });

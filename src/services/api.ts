@@ -43,12 +43,9 @@ export const testBackendConnection = async () => {
   return API_URL;
 };
 
-// Modo simulado para desarrollo local sin backend
-const MOCK_MODE = true; // FORZAMOS el modo simulado para no depender del backend
-const MOCK_DELAY = 400; // Simular latencia de red en ms
-
-// Variable para cambiar a modo simulado si hay errores de backend
-let useMockMode = MOCK_MODE;
+// Configuración de modo simulado (DESACTIVADO PARA USAR BACKEND REAL)
+let useMockMode = false; // *** CAMBIADO DE true A false ***
+const MOCK_DELAY = 400; // Simular latencia de red en ms (solo para modo mock)
 
 // Función para activar el modo simulado si hay problemas con el backend
 const activateMockMode = () => {

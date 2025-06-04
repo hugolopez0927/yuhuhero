@@ -7,6 +7,9 @@ const cors = require('cors');
 // Importa tus rutas
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/userRoutes');
+const quizRoutes = require('./routes/quizRoutes');
+const gameRoutes = require('./routes/gameRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
@@ -29,6 +32,9 @@ app.use((req, res, next) => {
 // --- Rutas montadas
 app.use('/api/auth', authRoutes);    // POST /api/auth/register, /api/auth/login
 app.use('/api/users', userRoutes);   // GET/PUT /api/users/profile (protegida)
+app.use('/api/quiz', quizRoutes);    // GET/POST /api/quiz/financial, /api/quiz/submit
+app.use('/api/game', gameRoutes);    // GET/PUT /api/game/map, /api/game/progress
+app.use('/api/notifications', notificationRoutes); // GET/PUT /api/notifications
 
 // (Opcional) ruta raíz de prueba
 app.get('/', (req, res) => res.send('🛠️  API YuhuHero funcionando'));
