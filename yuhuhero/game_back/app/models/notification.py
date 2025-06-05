@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 from bson import ObjectId
@@ -23,7 +23,7 @@ class NotificationCreate(NotificationBase):
     user_id: str
 
 class Notification(NotificationBase):
-    id: Optional[PyObjectId] = Field(alias="_id")
+    id: Optional[str] = None
     user_id: str
     read: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -33,8 +33,7 @@ class NotificationResponse(NotificationBase):
     read: bool
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class NotificationUpdate(BaseModel):
     read: Optional[bool] = None 

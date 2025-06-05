@@ -56,17 +56,17 @@ DEFAULT_GAME_TILES = [
 @router.get("/progress", response_model=GameProgress)
 async def get_user_game_progress(current_user: User = Depends(get_current_active_user)):
     """Obtener el progreso del juego del usuario"""
-    progress = await get_game_progress(current_user.id)
+    progress = await get_game_progress(current_user["id"])
     
     if not progress:
         # Si no hay progreso, crear uno nuevo
         default_progress = GameProgress(
-            user_id=current_user.id,
+            user_id=current_user["id"],
             current_level=1,
             coins=0,
             completed_levels=[]
         )
-        await update_game_progress(current_user.id, default_progress.dict())
+        await update_game_progress(current_user["id"], default_progress.dict())
         return default_progress
     
     return GameProgress(**progress)
@@ -78,12 +78,12 @@ async def update_user_game_progress(
 ):
     """Actualizar el progreso del juego del usuario"""
     # Obtener progreso actual
-    current_progress = await get_game_progress(current_user.id)
+    current_progress = await get_game_progress(current_user["id"])
     
     if not current_progress:
         # Si no hay progreso, crear uno nuevo
         current_progress = {
-            "user_id": current_user.id,
+            "user_id": current_user["id"],
             "current_level": 1,
             "coins": 0,
             "completed_levels": []
@@ -108,10 +108,10 @@ async def update_user_game_progress(
         update_data["completed_levels"] = completed_levels
     
     # Actualizar en la base de datos
-    await update_game_progress(current_user.id, update_data)
+    await update_game_progress(current_user["id"], update_data)
     
     # Obtener progreso actualizado
-    updated_progress = await get_game_progress(current_user.id)
+    updated_progress = await get_game_progress(current_user["id"])
     return GameProgress(**updated_progress)
 
 @router.get("/map", response_model=GameMap)

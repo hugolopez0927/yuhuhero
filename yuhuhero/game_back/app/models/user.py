@@ -1,7 +1,31 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 from bson import ObjectId
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def create_user_dict(data: dict) -> dict:
+    """
+    Prepara el payload que se guardará en MongoDB.
+    Espera keys: name, phone, password  (y cualquier otro campo extra).
+    • Hashea la contraseña
+    • Agrega timestamps y banderas por defecto
+    """
+    user = {
+        "name": data["name"],
+        "phone": data["phone"],
+        "password": pwd_context.hash(data["password"]),
+        "quizCompleted": False,
+        "created_at": datetime.utcnow(),
+        "role": "user",
+        "is_admin": False,
+    }
+    return user
+
+
 
 class PyObjectId(str):
     @classmethod
@@ -53,13 +77,27 @@ class TokenData(BaseModel):
 # Definición de tipo para un usuario
 User = Dict[str, Any]
 
-def user_entity(user: Dict[str, Any]) -> User:
+def user_entity(user: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Convierte un documento de usuario de MongoDB a un formato estándar
+    Convierte un documento de usuario de MongoDB a un formato seguro para respuesta API
+    Maneja la conversión de ObjectId a string y quita campos sensibles
     """
-    # Si el usuario tiene _id (ObjectId), convertirlo a string
-    if "_id" in user and user["_id"]:
-        user_dict = dict(user)
-        user_dict["id"] = str(user["_id"])
-        return user_dict
-    return dict(user) 
+    result = {}
+    
+    # Manejar _id de MongoDB
+    if "_id" in user:
+        result["id"] = str(user["_id"])
+    elif "id" in user:
+        result["id"] = user["id"]
+    
+    # Copiar el resto de campos no sensibles
+    safe_fields = ["name", "phone", "email", "is_admin", "quizCompleted", "created_at", "updated_at"]
+    for field in safe_fields:
+        if field in user:
+            result[field] = user[field]
+    
+    # Asegurar que quizCompleted existe (para frontend)
+    if "quizCompleted" not in result:
+        result["quizCompleted"] = user.get("quiz_completed", False)
+    
+    return result 

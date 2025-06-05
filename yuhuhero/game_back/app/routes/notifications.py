@@ -3,7 +3,7 @@ from typing import List
 import uuid
 
 from app.models.user import User
-from app.models.notification import Notification, NotificationCreate, NotificationUpdate, create_notification
+from app.models.notification import Notification, NotificationCreate, NotificationUpdate
 from app.dependencies import get_current_active_user
 from app.config.database import create_notification as db_create_notification, get_notifications
 
@@ -25,13 +25,12 @@ async def create_user_notification(
     if notification_data.user_id != current_user.id:
         notification_data.user_id = current_user.id
         
-    notification = create_notification(notification_data)
-    notification_id = await db_create_notification(notification)
+    # Create notification dict from Pydantic model
+    notification_dict = notification_data.dict()
+    notification_id = await db_create_notification(notification_dict)
     
-    # Añadir el ID a la notificación
-    notification["id"] = str(notification_id)
-    
-    return notification
+    # Return the created notification
+    return Notification(**notification_dict, id=str(notification_id))
 
 @router.put("/{notification_id}", response_model=dict)
 async def mark_notification_as_read(

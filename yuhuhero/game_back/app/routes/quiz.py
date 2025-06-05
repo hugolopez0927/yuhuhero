@@ -3,7 +3,7 @@ from typing import List
 import uuid
 
 from app.models.user import User
-from app.models.quiz import FinancialQuiz, QuizQuestion, QuizOption, QuizSubmission, QuizResult
+from app.models.quiz import Quiz as FinancialQuiz, QuizQuestion, QuizOption, QuizSubmission, QuizResult
 from app.dependencies import get_current_active_user
 from app.config.database import update_quiz_status, update_game_progress, get_game_progress
 
@@ -123,17 +123,25 @@ async def submit_quiz(
         elif score >= 70:
             rewards += 20
         
-        # Actualizar estado del quiz en el perfil del usuario
-        await update_quiz_status(current_user.id, True)
-        
-        # Actualizar monedas del usuario
-        game_progress = await get_game_progress(current_user.id)
-        current_coins = game_progress.get("coins", 0) if game_progress else 0
-        
-        await update_game_progress(
-            current_user.id,
-            {"coins": current_coins + rewards}
-        )
+        try:
+            # Actualizar estado del quiz en el perfil del usuario
+            quiz_update_success = await update_quiz_status(current_user["id"], True)
+            if not quiz_update_success:
+                print(f"No se pudo actualizar el estado del quiz para el usuario {current_user['id']}")
+            
+            # Actualizar monedas del usuario
+            game_progress = await get_game_progress(current_user["id"])
+            current_coins = game_progress.get("coins", 0) if game_progress else 0
+            
+            progress_update_success = await update_game_progress(
+                current_user["id"],
+                {"coins": current_coins + rewards}
+            )
+            if not progress_update_success:
+                print(f"No se pudo actualizar el progreso del juego para el usuario {current_user['id']}")
+        except Exception as e:
+            print(f"Error al procesar recompensas del quiz: {e}")
+            # No lanzar la excepción para permitir que se muestre el resultado igualmente
     
     return QuizResult(
         quiz_id=submission.quiz_id,

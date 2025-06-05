@@ -11,7 +11,14 @@ app = FastAPI(
 # Configuración CORS para permitir solicitudes desde el frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # URL del frontend React
+    allow_origins=[
+        "http://localhost:3000",  # URL del frontend React en desarrollo
+        "https://yuhugame.padi.company",   # URL del frontend en producción
+        "https://www.yuhugame.padi.company",  # URL alternativa con www
+        "http://yuhugame.padi.company",    # HTTP (aunque redirige a HTTPS)
+        "https://game.yuhu.mx",   # URL anterior (por si acaso)
+        "https://www.game.yuhu.mx",  # URL anterior con www
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,4 +37,4 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=5002, reload=True) 
+    uvicorn.run("main:app", host="0.0.0.0", port=5001, reload=True) 

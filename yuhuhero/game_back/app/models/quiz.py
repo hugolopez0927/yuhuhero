@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 from bson import ObjectId
@@ -26,7 +26,7 @@ class QuizQuestion(BaseModel):
     explanation: Optional[str] = None
 
 class Quiz(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id")
+    id: str  # Regular id field for sample quizzes
     title: str
     description: str
     questions: List[QuizQuestion]

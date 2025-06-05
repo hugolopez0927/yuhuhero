@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// URL base del API
-const API_URL = 'http://localhost:5001/api';
+// URL base del API - usar URL relativa para que funcione con nginx proxy
+const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5001/api'  // Para desarrollo local
+  : '/api';  // Para producción (a través de nginx proxy)
 
 // Cliente Axios configurado
 const apiClient = axios.create({
@@ -46,6 +48,7 @@ apiClient.interceptors.response.use(
 
 // URLs de prueba para backend
 const TEST_URLS = [
+  window.location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api',
   'http://localhost:5001/api',
   'http://localhost:3001/api',
   'http://localhost:5173/api'
@@ -133,14 +136,63 @@ export interface Notification {
 // Funciones de API
 export const loginUser = async (credentials: LoginCredentials): Promise<User> => {
   try {
+    console.log("Intentando login con credenciales:", credentials);
+    
     // Usar JSON en lugar de FormData para el backend Node.js
     const response = await apiClient.post('/auth/login', {
       phone: credentials.phone,
       password: credentials.password
     });
     
-    localStorage.setItem('token', response.data.token);
-    return response.data;
+    console.log("Respuesta de login:", response.data);
+    
+    // Guardar token - puede venir directamente o en un objeto token
+    const token = response.data.access_token || response.data.token;
+    if (!token) {
+      console.error("No se encontró token en la respuesta:", response.data);
+      throw new Error("No se recibió un token válido");
+    }
+    
+    localStorage.setItem('token', token);
+    
+    // Intentar primero con el endpoint alternativo para debug
+    try {
+      console.log("Intentando obtener perfil con token como parámetro");
+      const profileResponse = await apiClient.get(`/users/profile-by-token?token=${token}`);
+      const userData = profileResponse.data;
+      console.log("Perfil obtenido:", userData);
+      return {
+        ...userData,
+        token
+      };
+    } catch (profileAltError) {
+      console.warn("Error en endpoint alternativo, intentando endpoint estándar");
+      
+      // Si falla, intentar el endpoint estándar
+      try {
+        const userResponse = await apiClient.get('/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        console.log("Perfil obtenido con endpoint estándar:", userResponse.data);
+        return {
+          ...userResponse.data,
+          token
+        };
+      } catch (profileError) {
+        console.error("Error obteniendo perfil:", profileError);
+        
+        // Crear usuario básico basado en los datos disponibles
+        return {
+          id: 'temp-id',
+          name: 'Usuario',
+          phone: credentials.phone,
+          quizCompleted: false,
+          token
+        };
+      }
+    }
   } catch (error) {
     console.error('Error en login:', error);
     throw error;
