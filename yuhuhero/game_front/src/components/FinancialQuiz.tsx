@@ -96,97 +96,18 @@ const FinancialQuiz: React.FC = () => {
           setLoading(false);
           return;
         } else {
-          // Si el usuario ya completó el quiz anteriormente, cargar los datos inmediatamente
-          const data = await getFinancialQuiz();
-          
-          // Sobrescribir con nuestras preguntas personalizadas si el backend no las proporciona
-          if (data && data.questions) {
-            // Verificar si debemos modificar las preguntas
-            const customQuestions = [
-              {
-                id: "q1",
-                question: "¿Para qué te gustaría usar la aplicación?",
-                options: [
-                  { id: "q1_a", text: "Que me alcance mi sueldo" },
-                  { id: "q1_b", text: "Ahorrar algo, aunque sea poco" },
-                  { id: "q1_c", text: "Pagar mis deudas" },
-                  { id: "q1_d", text: "Entenderle mejor a mis gastos" },
-                  { id: "q1_e", text: "No lo tengo claro aún" }
-                ],
-                correct_option_id: "q1_c", // En este caso todas son válidas, pero ponemos una por defecto
-                explanation: "¡Excelente! Todas son metas válidas. Nosotros te ayudaremos a lograr tu objetivo."
-              },
-              {
-                id: "q2",
-                question: "¿Qué tanto sabes de finanzas personales?",
-                options: [
-                  { id: "q2_a", text: "No sé nada de finanzas" },
-                  { id: "q2_b", text: "Sé que los intereses altos me hacen pagar más" },
-                  { id: "q2_c", text: "Conozco el detalle de mis deudas" },
-                  { id: "q2_d", text: "Tengo controladas mis deudas" },
-                  { id: "q2_e", text: "Tengo un presupuesto" },
-                  { id: "q2_f", text: "Tengo un fondo de dinero para una emergencia" }
-                ],
-                correct_option_id: "q2_f", // La opción más avanzada, pero todas son válidas
-                explanation: "Perfecto. Identificar tu nivel de conocimiento nos ayuda a personalizarte mejor la experiencia."
-              },
-              {
-                id: "q3",
-                question: "¿Estado civil?",
-                options: [
-                  { id: "q3_a", text: "Casado" },
-                  { id: "q3_b", text: "Soltero" },
-                  { id: "q3_c", text: "Vivo con mi pareja" }
-                ],
-                correct_option_id: "q3_a", // Cualquiera es válida
-                explanation: "Gracias. Esto nos ayuda a entender mejor tu situación financiera."
-              },
-              {
-                id: "q4",
-                question: "¿Cuántas personas viven en tu casa?",
-                options: [
-                  { id: "q4_a", text: "1" },
-                  { id: "q4_b", text: "2" },
-                  { id: "q4_c", text: "3" },
-                  { id: "q4_d", text: "5" },
-                  { id: "q4_e", text: "+5" }
-                ],
-                correct_option_id: "q4_a", // Cualquiera es válida
-                explanation: "Gracias. El número de personas en tu hogar afecta tu presupuesto y planificación financiera."
-              },
-              {
-                id: "q5",
-                question: "¿Te gustaría que te recordemos que continúes y sigas mejorando?",
-                options: [
-                  { id: "q5_a", text: "Sí, quiero recibir recordatorios" },
-                  { id: "q5_b", text: "No, prefiero no recibir notificaciones" }
-                ],
-                correct_option_id: "q5_a", // Ambas son válidas
-                explanation: "¡Perfecto! Tu preferencia ha sido registrada."
-              },
-              {
-                id: "q6",
-                question: "¿Te gustaría instalar la app en tu teléfono? Es totalmente seguro.",
-                options: [
-                  { id: "q6_a", text: "Sí, quiero instalar la app" },
-                  { id: "q6_b", text: "No, prefiero usar la versión web" }
-                ],
-                correct_option_id: "q6_a", // Ambas son válidas
-                explanation: "¡Gracias por tu respuesta! Personalizaremos tu experiencia según tu preferencia."
-              }
-            ];
-            
-            // Reemplazar las preguntas del backend con las nuestras
-            data.questions = customQuestions;
-          }
-          
-          setQuizData(data);
-          
-          // Mostrar mensaje de bienvenida para usuarios que ya completaron el quiz
-          toast.info('¡Bienvenido de nuevo! Sigue mejorando tus conocimientos financieros', {
-            autoClose: 5000,
+          // Si el usuario ya completó el quiz anteriormente, redirigir al home
+          toast.success('¡Ya completaste el quiz! Te llevamos al mapa principal.', {
+            autoClose: 2000,
             position: "top-center"
           });
+          
+          // Esperar un momento para que se vea el mensaje y luego redirigir
+          setTimeout(() => {
+            navigate('/home');
+          }, 2000);
+          
+          return; // Salir de la función para evitar continuar con la carga
         }
       } catch (error) {
         console.error('Error cargando quiz:', error);
